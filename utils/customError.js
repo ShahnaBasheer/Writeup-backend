@@ -7,6 +7,7 @@ class CustomError extends Error {
         super(message); // Call parent constructor (Error)
         this.statusCode = statusCode; // Assign custom status code
         this.message = message;
+        Error.captureStackTrace(this, this.constructor);
     }
 }
 

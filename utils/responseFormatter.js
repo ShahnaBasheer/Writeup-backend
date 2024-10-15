@@ -6,8 +6,8 @@ const createSuccessResponse = (statusCode, info, message, res, req) => {
 
     if(info) data = { ...info };
     if(req) {
-        if(req.token) data.token = req.token;
-        if(req.user){
+        if(req?.token) data.token = req.token;
+        if(req?.user){
             data.user = req.user;
         }     
     }

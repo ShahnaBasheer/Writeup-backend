@@ -1,3 +1,5 @@
+const { CustomError } = require("../utils/customError");
+
 //not Found
 const notFound = (req, res, next) =>{
     const error = new Error(`Not Found : ${req.originalUrl}`);

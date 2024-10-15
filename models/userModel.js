@@ -1,15 +1,15 @@
 
 const { mongoose, Schema } = require('mongoose');
-
+const bcrypt = require('bcrypt');
 
 // Define the Customer schema
 const userSchema = new Schema(
     {
-        firstName: {
+        fullName: {
             type: String,
             required: true
         },
-        lastName: {
+        work: {
             type: String,
             required: true
         },
@@ -17,6 +17,14 @@ const userSchema = new Schema(
             type: String,
             required: true,
             unique: true
+        },
+        interests: {
+            type: [String],
+            enum: [ "Technology" , "Health" ,"Business" , "Sports",
+                "Lifestyle", "Education", "Travel", "Food" ,
+                "Entertainment", "Science", "Politics",
+                "Finance" , "Fashion"],
+            default: [] 
         },
         password: {
             type: String,
@@ -62,6 +70,18 @@ const userSchema = new Schema(
     }
 );
 
+
+userSchema.pre('save', async function(next) {
+    if(this.isModified('password')){
+      const salt = bcrypt.genSaltSync(10); //saltRounds 10
+      this.password = await bcrypt.hash(this.password, salt);
+    }
+  });
+ 
+
+userSchema.methods.comparePassword = async function(enteredPassword) {
+      return await bcrypt.compare(enteredPassword, this.password);
+  };
 
 const User = mongoose.model('User', userSchema);
 

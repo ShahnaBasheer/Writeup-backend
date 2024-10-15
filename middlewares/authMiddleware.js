@@ -1,6 +1,7 @@
 const asyncHandler = require("express-async-handler");
 const User = require("../models/userModel");
-
+const jwt = require('jsonwebtoken');
+const { ForbiddenError, UnauthorizedError } = require("../utils/customError");
 
 
 
@@ -16,13 +17,13 @@ const authMiddleware = asyncHandler(async (req, res, next) => {
       throw new UnauthorizedError("Not authorized: no access token");
     }
 
-    const decode = jwt.verify(accessToken, process.env.US_ACCESS);
+    const decode = jwt.verify(accessToken, process.env.JWT_SECRET);
     const user = await User.findById(decode?.id);
 
     if (!user) throw new UnauthorizedError("User not found!");
 
     if (user.isBlocked) {
-      res.clearCookie(process.env.US_REFRESH);
+      res.clearCookie(process.env.USER_REFRESH);
       throw new ForbiddenError("User account is blocked");
     }
 
@@ -31,14 +32,14 @@ const authMiddleware = asyncHandler(async (req, res, next) => {
   } catch (error) {
     console.log(error.message, "line 75 authmiddleware");
     if (error instanceof jwt.TokenExpiredError) {
-      let refreshToken = req?.cookies[process.env.US_REFRESH];
+      let refreshToken = req?.cookies[process.env.USER_REFRESH];
 
       if (!refreshToken) {
         throw new UnauthorizedError(`Refreshtoken is not found!`);
       }
 
       try {
-        const user = jwt.verify(refreshToken, process.env.US_REFRESH);
+        const user = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
         if (!user) throw new UnauthorizedError("User not found!");
 
         if (user.isBlocked) {
@@ -50,7 +51,7 @@ const authMiddleware = asyncHandler(async (req, res, next) => {
         req.user = user;
         req.token = token;
       } catch (error) {
-        res.clearCookie(process.env.US_REFRESH);
+        res.clearCookie(process.env.USER_REFRESH);
         if (
           error instanceof ForbiddenError ||
           error instanceof UnauthorizedError

@@ -1,4 +1,4 @@
-const sign =  require('jsonwebtoken');
+const { sign } =  require('jsonwebtoken');
 
 
 const generateToken = (id) => {
@@ -9,4 +9,4 @@ const generateRefreshToken = (id) => {
 };
 
 
-export default{ generateToken, generateRefreshToken } 
+module.exports = { generateToken, generateRefreshToken } 

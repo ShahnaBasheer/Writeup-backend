@@ -1,242 +1,163 @@
-
-
-const User = require('../models/userModel');
-const { generateToken, generateRefreshToken } = require('../config/jwToken');
-const asyncHandler = require('express-async-handler');
-const validateMongodbId = require('../utils/validateMongodbId');
-const { isValidEmail } = require('../utils/validateEmail');
-const { otpEmailSend } = require('../helperfns');
-const sendEmail = require('../utils/sendMail');
-const createSuccessResponse = require('../utils/responseFormatter');
-
+const User = require("../models/userModel");
+const { generateToken, generateRefreshToken } = require("../config/jwtToken");
+const asyncHandler = require("express-async-handler");
+const {
+  ConflictError,
+  NotFoundError,
+  TooManyRequestsError,
+  UnauthorizedError,
+  ForbiddenError,
+  BadRequestError,
+} = require("../utils/customError");
+const createSuccessResponse = require("../utils/responseFormatter");
+const { otpEmailSend } = require("../utils/helperFunction");
+const { validationResult } = require('express-validator');
+const sendEmail = require('../utils/sendEmail');
 
 
 //Create new user from signup form
-const createUser = asyncHandler(async (req,res) => {
-    const { email} = req.body;
-    const user = await User.find({email});
-    try {
-        if(user){
-            if(!user.isVerified) await User.deleteOne({ email});
-            else return res.redirect('/signup');
-        }
-        await otpEmailSend(req, true);
-        createSuccessResponse(200, { email }, "successfully", res, req);
-    } catch (error) {
-        console.log(error)
-        
+const createUser = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+  const errors = validationResult(req);
+
+  if (!errors.isEmpty()) {
+    throw new BadRequestError("Validation failed");
+  }
+
+  const user = await User.find({ email });
+
+  if (user) {
+    if (!user.isVerified) await User.deleteOne({ email });
+    else {
+      throw new ConflictError("You have already signed up. Please log in!");
     }
+  }
+  await otpEmailSend(req, true);
+  createSuccessResponse(
+    200,
+    { email }, "Verification Code has been sent Successfully!",
+    res,
+    req
+  );
 });
 
- 
-// const resendOtpCode = asyncHandler(async (req, res) => {
-//     try {
-//         const { email } = req.body;
 
-//         if (req.rateLimit.remaining < 0) {
-//             res.status(429).json({ message: 'Too many OTP requests. Try again later.' });
-//         }
+const resendOtpCode = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+  const remainingLimit = res.getHeader("X-RateLimit-Remaining");
 
-//         const user = await User.findOne({ email });
-//         if (user && !user.isVerified) {
-//              await otpEmailSend(req, false, email);
-//              res.status(200).json({ message: 'OTP resent successfully' });
-//         } else {
-//           res.status(404).json({ message: 'User not found or already verified' });
-//         }
-//     } catch (error) {
-//         console.error('Error sending OTP:', error);
-//         res.status(500).json({ error: 'Failed to resend OTP. Please try again.' });
-//     }
-// });
-  
-  
+  const errors = validationResult(req);
+
+  if (!errors.isEmpty()) {
+    throw new BadRequestError("Validation failed");
+  }
+
+  const user = await User.findOne({ email });
+
+  if (user && !user.isVerified) {
+    await otpEmailSend(req, false, email);
+    createSuccessResponse(200,{ email, remainingLimit }, "OTP resent successfully", res);
+  } else {
+    throw new NotFoundError("User not found or already verified");
+  }
+});
 
 // //OTP verification
-// const otpVerification = asyncHandler( async (req,res) => {
-//     try {
-//         const { otp, email } = req?.body,
-//             user = await User.findOne({ email, otp });
+const otpVerification = asyncHandler(async (req, res) => {
+  const { otp, email } = req?.body,
+    user = await User.findOne({ email });
 
-//         if (user && user?.otpTimestamp) {
-//             const currentTime = new Date();
-//             const otpTimestamp = new Date(user.otpTimestamp);
-//             const timeDifferenceInMinutes = (currentTime - otpTimestamp) / (1000 * 60);
-            
-//             if (timeDifferenceInMinutes <= 2) {
-//                 // OTP is valid within the 10-minute window
-//                 const subject = "Welcome to VOGUISH";
-//                 const text = `Dear ${user.firstname} ${user.lastname},\n
-//                 Welcome to VOGUISH!\n We are thrilled to have you on board.Thank you for choosing us as your go-to destination for all your shopping needs.\n
-//                 At VOGUISH, we offer a wide range of products,from the latest fashion trends.With our curated selection and exceptional customer service, we are committed to making your shopping experience delightful and hassle-free`;
-  
-//                 await sendEmail(email, subject, text);
-//                 await User.updateOne(
-//                     { email },
-//                     { 
-//                       $set: { isVerified: true }, // Set fields you want to keep
-//                       $unset: { otpTimestamp: "", otp: "" } // Unset fields you want to remove
-//                     }
-//                   );;
-//                 const successMessage = 'You have successfully signed up! Please Login here';
-//                 //res.redirect(`/login?success=${encodeURIComponent(successMessage)}`);
-//                 res.status(200).json({ redirect: `/login?success=${encodeURIComponent(successMessage)}` })
-//             } else {
-//                 res.status(422).json({ message: 'Expired OTP!' });//401 Unauthorized
-//             }   
-//         } else {
-//             res.status(401).json({ message: 'Invalid OTP!' }); //422 Unprocessable Entity
-//         }
-//     } catch (error) {
-//         console.log(error)
-//         res.status(500).json({message: error.message});
-//     }
-// });
+  if (user && user?.isVerified) throw new ConflictError("User Already Exist!");
+ 
+  if (!user?.otp || !user?.otpTimestamp || user?.otp !== otp) {
+    throw new BadRequestError("Invalid OTP");
+  }
+
+  const currentTime = new Date();
+  const otpTimestamp = new Date(user?.otpTimestamp);
+  const timeDifferenceInMinutes = (currentTime.getTime() - otpTimestamp.getTime()) / (1000 * 60);
+  console.log(timeDifferenceInMinutes > 2)
+  if (timeDifferenceInMinutes > 2) throw new BadRequestError("Expired OTP"); // OTP expired
+
+  // OTP is valid within the 10-minute window
+  const subject = "Welcome to WriteUp";
+  const text = `Dear ${user.fullName},\n
+                    Welcome to WriteUp!\n We are thrilled to have you on board.Thank you for choosing us`;
+
+  await sendEmail(email, subject, text);
+  await User.updateOne(
+    { email },
+    {
+      $set: { isVerified: true }, // Set fields you want to keep
+      $unset: { otpTimestamp: "", otp: "" }, // Unset fields you want to remove
+    }
+  );
+
+  createSuccessResponse(
+    200,
+    null,
+    "You have successfully signed up! Please Login here",
+    res
+  );
+});
 
 // //login user from login form
-// const loginUser = asyncHandler(async (req, res) =>{
-//     const { email,password } = req.body,
-//         findUser = await User.findOne({ email, isDeleted: false });
-        
+const loginUser = asyncHandler(async (req, res) => {
+  const { email, password } = req.body;
 
-//     if(findUser?.isBlocked) return res.redirect('/account-blocked');
-    
-//     if(findUser && await findUser?.comparePassword(password) && findUser?.role =='user' && findUser?.isVerified){
-//         const accessToken = generateToken(findUser?.id);
-//         const refreshToken = generateRefreshToken(findUser?.id);
-    
-//         res.cookie('accessToken', accessToken, {
-//             httpOnly: true,
-//             secure: true,
-//             maxAge: 15 * 60 * 1000,
-//             sameSite: 'Lax' ,
-//         });
-//         res.cookie('refreshToken', refreshToken, {
-//             httpOnly: true,
-//             secure: true,
-//             maxAge: 3 * 24 * 60 * 60 * 1000, 
-//             sameSite: 'Lax' ,
-//         });
-//         res.redirect('/');
-//     }else{
-//         console.log("Invalid Credentials");
-//         res.redirect(302, `/login?message=${encodeURIComponent("Invalid Credentials")}`)
-//     }
-// });
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    throw new BadRequestError("Validation failed");
+  }
 
+  const findUser = await User.findOne({ email, isDeleted: false });
 
-// //Update a user
-// const updateUser = asyncHandler( async (req,res) => {
-//     const { _id } = req?.user;
-//     validateMongodbId(_id);
-//     const getUsers = await User.findByIdAndUpdate(_id,
-//         {
-//             firstname: req?.body?.firstname,
-//             lastname: req?.body?.lastname,
-//             email: req?.body?.email,
-//             phone: req?.body?.phone,
-//             password: req?.body?.password,
-//         },
-//         {new : true, }
-//     );
-//     res.json(getUsers)
-// });
+  if (findUser && findUser?.isBlocked){
+    throw new ForbiddenError("User account is blocked");
+  }
 
-// //get All users
-// const getAllUsers = asyncHandler( async (req,res) => {
-//     const users = await User.find().populate('addresses').lean();
-//     res.render('admin/users',{admin:true,adminInfo:req?.user,users,__active: 'users'});
-// });
+  if (
+    findUser &&
+    (await findUser?.comparePassword(password)) &&
+    findUser?.role == "user" &&
+    findUser?.isVerified
+  ) {
+    const accessToken = generateToken(findUser?.id);
+    const refreshToken = generateRefreshToken(findUser?.id);
 
-// //get a single user
-// const getUser = asyncHandler( async (req,res) => {
-//     const { id } = req.params;
-//     validateMongodbId(id);
-//     const getUsers = await User.findById(id);
-//     res.json({getUsers})
-// });
+    res.cookie(process.env.USER_REFRESH, refreshToken, {
+      httpOnly: true,
+      secure: true,
+      maxAge: 3 * 24 * 60 * 60 * 1000, //3 * 24 * 60 * 60 * 1000
+    });
+    createSuccessResponse(200, { token: accessToken, user: findUser }, "Login successfully!", res);
+  } else {
+    throw new UnauthorizedError("Invalid email or password");
+  }
+});
 
 
-// //get delete a user
-// const restoreUser = asyncHandler( async (req,res) => {
-//     const { id } = req?.params;
-//     validateMongodbId(id);
-//     const deleted = await User.findByIdAndUpdate(id, {isDeleted: false});
-//     const fullname = deleted?.firstname + " " + deleted?.lastname;
-//     res.redirect('/admin/users');
-// });
-
-// //get delete a user
-// const deleteUser = asyncHandler( async (req,res) => {
-//     const { id } = req?.params;
-//     validateMongodbId(id);
-//     const deleted = await User.findByIdAndUpdate(id, {isDeleted: true});
-//     const fullname = deleted?.firstname + " " + deleted?.lastname;
-//     res.redirect('/admin/users');
-// });
-
-// //Block user
-// const blockUser = asyncHandler( async (req,res,next)=> {
-//     const { id } = req.params;
-//     validateMongodbId(id);
-//     const users = await User.find().lean();
-//     await User.findByIdAndUpdate(id,{isBlocked : true},{new:true});
-//     req.flash('success', 'User successfully blocked');
-       
-//     res.redirect('/admin/users')
-// });
-
-// //Unblock user
-// const unblockUser = asyncHandler( async (req,res,next)=> {
-//     const { id } = req.params;
-//     await User.findByIdAndUpdate(id,{isBlocked : false},{new:true});
-//     req.flash('success', 'User successfully unblocked');
-//     res.redirect('/admin/users');
-// });
 
 // //logout user
-// const logout = asyncHandler(async (req, res) => {
-//     const refreshToken = req?.cookies?.refreshToken;
-
-//     if (!refreshToken) {
-//         throw new Error("No Refresh Token in Cookies");
-//     }
-
-//     // Clear both access token and refresh token cookies
-//     res.clearCookie("accessToken", {
-//         httpOnly: true,
-//         secure: true,
-//     });
-//     res.clearCookie("refreshToken", {
-//         httpOnly: true,
-//         secure: true,
-//     });
-
-//     await User.findOneAndUpdate({ refreshToken }, { refreshToken: "" });
-//     const redirectUrl = req?.query?.redirect || '/';
-//     return res.redirect(redirectUrl);
-// });
-
-
-// //Email checking to know if already exist
-// const emailCheck = asyncHandler( async (req,res) => {
-//     const email = req.query?.email;
-//     const isEmailValid = await isValidEmail(email);
-//     res.json({exists : isEmailValid});    
-// });
+const logoutUser = asyncHandler(async (req, res) => {
+    const refreshToken = req?.cookies[process.env.USER_REFRESH];
+    if (!refreshToken) throw new Error("No Refresh Token in Cookies");
+    res.clearCookie(process.env.USER_REFRESH);
+    createSuccessResponse(200, null, "Successfully Logout!", res, req)
+});
 
 
 module.exports = {
-    createUser,
-    // loginUser,
-    // updateUser, 
-    // getUser, 
-    // restoreUser,
-    // deleteUser,
-    // blockUser,
-    // unblockUser,
-    // logout, 
-    // emailCheck,
-    // otpVerification,
-    // resendOtpCode,
-}
+  createUser,
+  loginUser,
+  resendOtpCode,
+  otpVerification,
+  logoutUser,
+  // updateUser,
+  // getUser,
+  // restoreUser,
+  // deleteUser,
+  // blockUser,
+  // unblockUser,
+  // emailCheck,
+};
