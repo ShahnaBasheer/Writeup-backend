@@ -2,6 +2,7 @@ const asyncHandler = require("express-async-handler");
 const User = require("../models/userModel");
 const jwt = require('jsonwebtoken');
 const { ForbiddenError, UnauthorizedError } = require("../utils/customError");
+const { generateToken } = require("../config/jwtToken");
 
 
 
@@ -63,7 +64,7 @@ const authMiddleware = asyncHandler(async (req, res, next) => {
     } else if (error instanceof ForbiddenError) {
       throw error;
     }
-
+     
     return next();
   }
 });

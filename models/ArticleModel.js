@@ -3,10 +3,22 @@ const Schema = mongoose.Schema;
 
 // Define the Article schema
 const articleSchema = new Schema({
+    author: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User', // Reference to the User collection
+        required: true,
+    },
     title: {
         type: String,
         required: true,
         minlength: 5
+    },
+    description: {
+        type: String,
+        required: true,
+        minlength: 100,
+        maxlength: 400
+
     },
     category: {
         type: String,
@@ -16,7 +28,7 @@ const articleSchema = new Schema({
     content: {
         type: String,
         required: true,
-        minlength: 100
+        minlength: 200
     },
     image: {
         type: String, // If storing image as a URL or path

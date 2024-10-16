@@ -146,6 +146,13 @@ const logoutUser = asyncHandler(async (req, res) => {
     createSuccessResponse(200, null, "Successfully Logout!", res, req)
 });
 
+const getProfile = asyncHandler(async (req, res) => {
+
+  const profile = await User.findOne({ id: req.user.id });
+  createSuccessResponse(200, { profile }, "Successfully Logout!", res, req)
+});
+
+
 
 module.exports = {
   createUser,
@@ -153,6 +160,7 @@ module.exports = {
   resendOtpCode,
   otpVerification,
   logoutUser,
+  getProfile
   // updateUser,
   // getUser,
   // restoreUser,
