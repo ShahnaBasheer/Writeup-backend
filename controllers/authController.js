@@ -147,9 +147,8 @@ const logoutUser = asyncHandler(async (req, res) => {
 });
 
 const getProfile = asyncHandler(async (req, res) => {
-
-  const profile = await User.findOne({ id: req.user.id });
-  createSuccessResponse(200, { profile }, "Successfully Logout!", res, req)
+  const profile = await User.findOne({ _id: req.user.id });
+  createSuccessResponse(200, { profile }, "Successfully get Profile!", res, req)
 });
 
 
