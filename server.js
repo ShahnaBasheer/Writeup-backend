@@ -22,9 +22,7 @@ app.use(express.json({ limit: '100mb' })); // Increase limit to 100MB
 app.use(express.urlencoded({ extended: true, limit: '100mb' }));
 app.use(cors({
   credentials: true,
-  origin:[ process.env.LOCALHOST_URL || '',
-    process.env.FRONTEND_WWW_URL || '', 
-    process.env.FRONTEND_AMPLIFY_URL || '', 
+  origin:[ process.env.LOCALHOST_URL || '', 
     process.env.FRONTEND_WWW_SLASH || '', 
     process.env.FRONTEND_SLASH_URL || ''
   ],
