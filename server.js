@@ -18,8 +18,8 @@ dbConnect();
 // Middlewares
 app.use(cookieParser());
 app.use(logger('dev'));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '100mb' })); // Increase limit to 100MB
+app.use(express.urlencoded({ extended: true, limit: '100mb' }));
 app.use(cors({
   credentials: true,
   origin:[ process.env.LOCALHOST_URL || '',
