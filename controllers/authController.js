@@ -126,10 +126,10 @@ const loginUser = asyncHandler(async (req, res) => {
     const refreshToken = generateRefreshToken(findUser?.id);
 
     res.cookie(process.env.USER_REFRESH, refreshToken, {
-      httpOnly: true,           // Ensures the cookie is not accessible via client-side JavaScript
-      secure: true,             // Ensures the cookie is sent only over HTTPS
-      sameSite: 'Lax',          // Restricts cross-site request forgery (CSRF) attacks
-      maxAge: 3 * 24 * 60 * 60 * 1000 // Cookie expires in 3 days
+      httpOnly: true,            // Cookie is not accessible via client-side scripts
+      secure: true,              // Cookie will be sent only over HTTPS
+      sameSite: 'None',          // Required for cross-site requests
+      maxAge: 3 * 24 * 60 * 60 * 1000 // Cookie expires after 3 days
     });
     createSuccessResponse(200, { token: accessToken, user: findUser }, "Login successfully!", res);
   } else {
