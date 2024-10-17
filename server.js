@@ -28,6 +28,7 @@ app.use(cors({
     process.env.FRONTEND_WWW_SLASH || '', 
     process.env.FRONTEND_SLASH_URL || ''
   ],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'X-Requested-With'],
   methods: ['GET', 'POST', 'PATCH', 'DELETE', 'PUT']
 }));
 
