@@ -128,6 +128,7 @@ const loginUser = asyncHandler(async (req, res) => {
     res.cookie(process.env.USER_REFRESH, refreshToken, {
       httpOnly: true,
       secure: true,
+      SamSite: 'Lax',
       maxAge: 3 * 24 * 60 * 60 * 1000, //3 * 24 * 60 * 60 * 1000
     });
     createSuccessResponse(200, { token: accessToken, user: findUser }, "Login successfully!", res);
@@ -141,6 +142,7 @@ const loginUser = asyncHandler(async (req, res) => {
 // //logout user
 const logoutUser = asyncHandler(async (req, res) => {
     const refreshToken = req?.cookies[process.env.USER_REFRESH];
+    console.log('Refresh Cookie Name:', process.env.USER_REFRESH);
     if (!refreshToken) throw new Error("No Refresh Token in Cookies");
     res.clearCookie(process.env.USER_REFRESH);
     createSuccessResponse(200, null, "Successfully Logout!", res, req)

@@ -15,7 +15,7 @@ const notFound = (req, res, next) =>{
       return res.status(error.statusCode).json({status: 'error', message: error?.message });
   } else {
       return res.status(500).json({status: 'error', message: 'Internal Server Error' });
-  }s
+  }
  };
  
  module.exports = { notFound, errorHandler }
