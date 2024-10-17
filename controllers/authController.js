@@ -128,7 +128,7 @@ const loginUser = asyncHandler(async (req, res) => {
     res.cookie(process.env.USER_REFRESH, refreshToken, {
       httpOnly: true,
       secure: true,
-      SamSite: 'Lax',
+      SameSite: 'Lax',
       maxAge: 3 * 24 * 60 * 60 * 1000, //3 * 24 * 60 * 60 * 1000
     });
     createSuccessResponse(200, { token: accessToken, user: findUser }, "Login successfully!", res);
