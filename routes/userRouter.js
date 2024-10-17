@@ -15,7 +15,7 @@ const resendOtpLimiter = require('../middlewares/rateLimit');
 const upload = require('../config/multer');
 const router = Router();
 
-
+router.get('/', authMiddleware, isUser, getDashBoard);
 router.post('/login', validateLogin, loginUser);
 router.post('/signup', validateSignup, createUser);
 router.post('/verify-otp', otpVerification);
