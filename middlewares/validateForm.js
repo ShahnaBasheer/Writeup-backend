@@ -51,8 +51,34 @@ const validateLogin = [
     .withMessage("Password must contain atlease 6 characters"),
 ];
 
+const validateProfile = [
+  // Validation rules for each field in the request body
+  body("fullName")
+    .notEmpty()
+    .isLength({ min: 3 })
+    .withMessage("Full Name is required"),
+  body("work").notEmpty().isLength({ min: 3 }).withMessage("Work is required"),
+  body("email").isEmail().withMessage("Email is required"),
+  body("interests")
+    .notEmpty()
+    .withMessage("Interests are required")
+    .isArray({ min: 1 })
+    .withMessage("Interests must be an array with atleast 1 interest"),
+];
+
+const validatePassword = [
+  body("currentPassword")
+    .isLength({ min: 6 })
+    .withMessage("Current Password must contain atlease 6 characters"),
+  body("newPassword")
+    .isLength({ min: 6 })
+    .withMessage("New Password must contain atlease 6 characters"),
+];
+
 module.exports = {
   validateSignup,
   validateLogin,
   validateArticleForm,
+  validateProfile,
+  validatePassword,
 };

@@ -24,7 +24,11 @@ const authMiddleware = asyncHandler(async (req, res, next) => {
     if (!user) throw new UnauthorizedError("User not found!");
 
     if (user.isBlocked) {
-      res.clearCookie(process.env.USER_REFRESH);
+      res.clearCookie(process.env.USER_REFRESH, {
+        httpOnly: true, // Match these settings with the original cookie
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'Lax'
+      });
       throw new ForbiddenError("User account is blocked");
     }
 
@@ -40,7 +44,8 @@ const authMiddleware = asyncHandler(async (req, res, next) => {
       }
 
       try {
-        const user = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+        const decode = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+        const user = await User.findById(decode?.id);
         if (!user) throw new UnauthorizedError("User not found!");
 
         if (user.isBlocked) {
@@ -52,7 +57,11 @@ const authMiddleware = asyncHandler(async (req, res, next) => {
         req.user = user;
         req.token = token;
       } catch (error) {
-        res.clearCookie(process.env.USER_REFRESH);
+        res.clearCookie(process.env.USER_REFRESH, {
+          httpOnly: true, // Match these settings with the original cookie
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'Lax'
+        });
         if (
           error instanceof ForbiddenError ||
           error instanceof UnauthorizedError

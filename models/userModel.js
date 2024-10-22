@@ -7,10 +7,12 @@ const userSchema = new Schema(
     {
         fullName: {
             type: String,
+            minlength: 3,
             required: true
         },
         work: {
             type: String,
+            minlength: 3,
             required: true
         },
         email: {

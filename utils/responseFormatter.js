@@ -8,8 +8,14 @@ const createSuccessResponse = (statusCode, info, message, res, req) => {
     if(req) {
         if(req?.token) data.token = req.token;
         if(req?.user){
-            data.user = req.user;
-        }     
+            data.user = { 
+               id: req?.user?.id,
+               fullName: req?.user?.fullName,
+               work: req?.user?.work,
+               email: req?.user?.email,
+               role: req?.user?.role,
+            }    
+       }
     }
     res.status(statusCode).json({ status: 'success', data , message });
 }

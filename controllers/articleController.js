@@ -8,8 +8,14 @@ const { BadRequestError, ConflictError } = require("../utils/customError");
 
 
 const getDashBoard = asyncHandler(async (req, res) => {
-  const articles = await Article.find({}).populate('author');
-  createSuccessResponse(200, { articles }, "successfully", res, req);
+  const interests = req?.user?.interests ;
+  let filter = {};
+  if (interests?.length > 0) {
+    filter = { category: { $in: interests } }; // Filter by interests if not empty
+  }
+
+  const articles = await Article.find(filter).populate('author').sort({ createdAt: -1 });;
+  createSuccessResponse(200, { articles }, "successfully fetch dashboard data", res, req);
 });
 
 
@@ -45,15 +51,13 @@ const createArticle = asyncHandler(async (req, res) => {
   };
 
   // Save article to database
-  await Article.create(data);
-
-  // Send success response
-  createSuccessResponse(200, null, "Article created successfully", res, req);
+  const article = await Article.create(data);
+  createSuccessResponse(200, { article }, "Article created successfully", res, req);
 });
 
 
 const getMyArticles = asyncHandler(async (req, res) => {
-  const articles = await Article.find({ author: req?.user?.id });
+  const articles = await Article.find({ author: req?.user?.id }).sort({ createdAt: -1 });;
   createSuccessResponse(200, { articles }, "Articles retrieved successfully", res, req);
 });
 
@@ -100,22 +104,22 @@ const editArticle = asyncHandler(async (req, res) => {
   existingArticle.description = req.body.description || existingArticle.description;
 
   // Save the updated article back to the database
-  await existingArticle.save();
+  const article = await existingArticle.save();
 
   // Send success response
-  createSuccessResponse(200, null, "Article updated successfully", res, req);
+  createSuccessResponse(200, { article }, "Article updated successfully", res, req);
 });
 
 const deleteArticle = asyncHandler(async (req, res) => {
   const { articleId } = req.params;
-  const article = await Article.findById(articleId);
+  const getarticle = await Article.findById(articleId);
   
-  if (!article) {
+  if (!getarticle) {
     throw new Error("Article not found"); 
   }
 
-  await Article.findByIdAndDelete(articleId);
-  createSuccessResponse(200, null, "Article successfully deleted", res, req);
+  const article = await Article.findByIdAndDelete(articleId);
+  createSuccessResponse(200,{ article }, "Article successfully deleted", res, req);
 });
 
 

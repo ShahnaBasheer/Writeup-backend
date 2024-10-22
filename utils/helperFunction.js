@@ -6,7 +6,7 @@ const { Readable } = require("stream");
 const sharp = require('sharp');
 
 
-const otpEmailSend = async (req, userCreate, oldEmail) => {
+const otpEmailSend = async (req, userCreate, email) => {
     try{
         const otp =  otpGenerator.generate(6, { specialChars: false });
         req.body.otp =  otp;
@@ -14,17 +14,13 @@ const otpEmailSend = async (req, userCreate, oldEmail) => {
   
         const subject = "OTP Verification";
         const text = `Your OTP for email verification is: ${otp}`;
-        if(userCreate){
+
+        if(userCreate) {
            await User.create(req.body);
-        }else if(userCreate == "profile_setting"){
-          await sendEmail(oldEmail, subject, text);
-        }else{
-            await User.updateOne(
-              { email:req.body.email },
-              { $set: { otp, otpTimestamp: new Date() } }
-            );
         }
-        await sendEmail(req.body.email, subject, text);
+        
+        await sendEmail(email, subject, text);
+        return otp;
     }catch(error){
         console.log(error);
         throw Error

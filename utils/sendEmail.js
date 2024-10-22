@@ -1,9 +1,14 @@
 const nodemailer = require("nodemailer");
+const { BadRequestError } = require("./customError");
 
 
 const sendEmail = async (email, subject, text) => {
 
   try {
+
+    if(!email){
+       throw new BadRequestError('Email Id is required!');
+    }
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
@@ -19,8 +24,9 @@ const sendEmail = async (email, subject, text) => {
     });
     console.log("email sent sucessfully");
   } catch (error) {
-    console.log("email not sent");
-    console.log(error);
+    console.log(error.message,"email not sent");
+    throw error;
+
   }
 };
 
