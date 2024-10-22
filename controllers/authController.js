@@ -133,7 +133,7 @@ const loginUser = asyncHandler(async (req, res) => {
     res.cookie(process.env.USER_REFRESH, refreshToken, {
       httpOnly: true, // Cookie is not accessible via client-side scripts
       secure: process.env.NODE_ENV === 'production', // Cookie will be sent only over HTTPS
-      sameSite: 'Lax', // Required for cross-site requests
+      sameSite: process.env.NODE_ENV === 'production'? 'None': 'Lax', // Required for cross-site requests
       maxAge: 3 * 24 * 60 * 60 * 1000, // Cookie expires after 3 days
     });
     createSuccessResponse(
@@ -154,7 +154,7 @@ const logoutUser = asyncHandler(async (req, res) => {
   res.clearCookie(process.env.USER_REFRESH, {
     httpOnly: true, // Match these settings with the original cookie
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'Lax'
+    sameSite: process.env.NODE_ENV === 'production'? 'None': 'Lax',
   });
   
   createSuccessResponse(200, null, "Successfully Logout!", res, req);

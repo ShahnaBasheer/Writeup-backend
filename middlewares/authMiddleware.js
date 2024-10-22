@@ -27,7 +27,7 @@ const authMiddleware = asyncHandler(async (req, res, next) => {
       res.clearCookie(process.env.USER_REFRESH, {
         httpOnly: true, // Match these settings with the original cookie
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'Lax'
+        sameSite: process.env.NODE_ENV === 'production'? 'None': 'Lax',
       });
       throw new ForbiddenError("User account is blocked");
     }
@@ -60,7 +60,7 @@ const authMiddleware = asyncHandler(async (req, res, next) => {
         res.clearCookie(process.env.USER_REFRESH, {
           httpOnly: true, // Match these settings with the original cookie
           secure: process.env.NODE_ENV === 'production',
-          sameSite: 'Lax'
+          sameSite: process.env.NODE_ENV === 'production'? 'None': 'Lax',
         });
         if (
           error instanceof ForbiddenError ||
