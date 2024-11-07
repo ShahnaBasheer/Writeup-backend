@@ -13,7 +13,7 @@ const validateSignup = [
     .withMessage("Password must contain atlease 6 characters"),
 ];
 
-const validateArticleForm = [
+const validateBlogForm = [
   // Validation for the title field
   body("title")
     .isString()
@@ -78,7 +78,7 @@ const validatePassword = [
 module.exports = {
   validateSignup,
   validateLogin,
-  validateArticleForm,
+  validateBlogForm,
   validateProfile,
   validatePassword,
 };

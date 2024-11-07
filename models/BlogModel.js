@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 // Define the Article schema
-const articleSchema = new Schema({
+const blogSchema = new Schema({
     author: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User', // Reference to the User collection
@@ -39,7 +39,7 @@ const articleSchema = new Schema({
 });
 
 // Create the Article model from the schema
-const Article = mongoose.model('Article', articleSchema)
+const Blog = mongoose.model('Blog', blogSchema)
 
 
-module.exports = Article;
+module.exports = Blog;
